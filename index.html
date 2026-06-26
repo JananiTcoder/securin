@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Recipe Search</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+            input { width: 100%; padding: 12px; margin-bottom: 12px; font-size: 16px; }
+            button { padding: 10px 16px; font-size: 16px; }
+            .result { border: 1px solid #ddd; padding: 14px; margin-bottom: 16px; border-radius: 8px; background: #fafafa; }
+            .result h2 { margin: 0 0 8px; }
+            .result p { margin: 6px 0; }
+            .ingredients, .instructions, .nutrients { margin: 10px 0; }
+            .ingredients li, .instructions li { margin-bottom: 4px; }
+        </style>
+    </head>
+    <body>
+        <h1>Recipe Search</h1>
+        <p>Enter a recipe title such as <strong>Sweet Potato Pie</strong>.</p>
+        <input type="text" id="text" placeholder="Search recipes by title..." />
+        <button id="search">Search</button>
+        <div id="results"></div>
+
+        <script>
+            const searchButton = document.getElementById('search');
+            const textInput = document.getElementById('text');
+            const resultsDiv = document.getElementById('results');
+
+            async function doSearch() {
+                const query = textInput.value.trim();
+                if (!query) {
+                    resultsDiv.innerHTML = '<p>Please enter a title.</p>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = '<p>Searching...</p>';
+                const response = await fetch(`/search?text=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (!data.length) {
+                    resultsDiv.innerHTML = '<p>No results found.</p>';
+                    return;
+                }
+
+                resultsDiv.innerHTML = data.map(item => `
+                    <div class="result">
+                        <h2>${item.title}</h2>
+                        <p><strong>Cuisine:</strong> ${item.cuisine}</p>
+                        <p><strong>Country/State:</strong> ${item.Country_State} (${item.Contient})</p>
+                        <p><strong>Rating:</strong> ${item.rating} • <strong>Total time:</strong> ${item.total_time} min</p>
+                        <p>${item.description || ''}</p>
+                        <div class="ingredients">
+                            <strong>Ingredients:</strong>
+                            <ul>${(item.ingredients || []).map(ing => `<li>${ing}</li>`).join('')}</ul>
+                        </div>
+                        <div class="instructions">
+                            <strong>Instructions:</strong>
+                            <ol>${(item.instructions || []).map(step => `<li>${step}</li>`).join('')}</ol>
+                        </div>
+                        ${item.nutrients ? `
+                            <div class="nutrients">
+                                <strong>Nutrients:</strong>
+                                <ul>${Object.entries(item.nutrients).map(([key, value]) => `<li>${key}: ${value}</li>`).join('')}</ul>
+                            </div>
+                        ` : ''}
+                        <p><a href="${item.URL}" target="_blank">View recipe source</a></p>
+                    </div>
+                `).join('');
+            }
+
+            searchButton.addEventListener('click', doSearch);
+            textInput.addEventListener('keydown', event => {
+                if (event.key === 'Enter') {
+                    doSearch();
+                }
+            });
+        </script>
+    </body>
+</html>
